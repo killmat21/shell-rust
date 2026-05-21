@@ -3,15 +3,15 @@ use std::io::{self, Write};
 use itertools::join;
 use aho_corasick::AhoCorasick;
 
+const ALLOWED_COMMANDS: [&str; 3] = ["exit", "echo", "type"];
+
 fn _sanitize_user_input(buffer: &String) -> String {
-    let patterns = &["\"", "\'"];
-    let replace_with = &["", ""];
+    let patterns: &[&str; 2] = &["\"", "\'"];
+    let replace_with: &[&str; 2] = &["", ""];
 
     let ac: AhoCorasick = AhoCorasick::new(patterns).unwrap();
     ac.replace_all(buffer, replace_with)
 }
-
-const ALLOWED_COMMANDS: [&str; 3] = ["exit", "echo", "type"];
 
 fn main() -> io::Result<()> {
     loop {
