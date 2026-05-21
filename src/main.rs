@@ -38,7 +38,7 @@ fn main() -> io::Result<()> {
                         println!("{arg} is a shell builtin");
                     }
                     else {
-                        println!("{arg}: command not found");
+                        println!("{arg}: not found");
                     }
                 }
             },
