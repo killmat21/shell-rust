@@ -3,7 +3,7 @@ use io::Error;
 use itertools::join;
 use aho_corasick::AhoCorasick;
 
-const ALLOWED_COMMANDS: [&str; 3] = ["exit", "echo", "type"];
+const ALLOWED_COMMANDS: [&str; 4] = ["exit", "echo", "type", "pwd"];
 
 fn _sanitize_user_input(buffer: &String) -> String {
     let patterns: &[&str; 2] = &["\"", "\'"];
@@ -66,6 +66,10 @@ fn main() -> io::Result<()> {
 
         match command {
             "exit" => break,
+            "pwd" => {
+                let pwd_env_var: String = std::env::var("PWD").unwrap();
+                println!("{pwd_env_var}");
+            },
             "echo" => {
                 let display_str: String = join(&mut args, " ");
                 println!("{display_str}");
