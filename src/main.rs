@@ -80,9 +80,16 @@ fn main() -> io::Result<()> {
                 println!("{cwd}");
             },
             "cd" => {
-                let root = Path::new(args[0]);
+                let path: String;
+                if args.is_empty() || args[0] == "~" {
+                    path = env::home_dir().unwrap().display().to_string();
+                }
+                else {
+                    path = String::from(args[0]);
+                }
+                let root = Path::new(&path);
                 if env::set_current_dir(&root).is_err() {
-                    _print_stderr(format!("cd: {}: No such file or directory\n", args[0]));
+                    _print_stderr(format!("cd: {}: No such file or directory\n", path));
                 }
             },
             "echo" => {
