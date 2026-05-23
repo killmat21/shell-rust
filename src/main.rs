@@ -1,9 +1,9 @@
-use std::{fs, io::{self, ErrorKind, Write}, os::unix::fs::PermissionsExt, process::Command};
+use std::{env, fs, io::{self, ErrorKind, Write}, os::unix::fs::PermissionsExt, path::Path, process::Command};
 use io::Error;
 use itertools::join;
 use aho_corasick::AhoCorasick;
 
-const ALLOWED_COMMANDS: [&str; 4] = ["exit", "echo", "type", "pwd"];
+const ALLOWED_COMMANDS: [&str; 5] = ["exit", "echo", "type", "pwd", "cd"];
 
 fn _sanitize_user_input(buffer: &String) -> String {
     let patterns: &[&str; 2] = &["\"", "\'"];
@@ -14,7 +14,7 @@ fn _sanitize_user_input(buffer: &String) -> String {
 }
 
 fn _find_executable_command_in_path(command: &str) -> Result<String, Error> {
-    let path_env_var: String = std::env::var("PATH").unwrap();
+    let path_env_var: String = env::var("PATH").unwrap();
     let paths = path_env_var.split(":");
     for path in paths {
         let entries = match fs::read_dir(path) {
@@ -48,6 +48,15 @@ fn _execute_command(command: &String, args: Vec<&str>) -> Result<(), Error> {
     Ok(())
 }
 
+fn _get_current_working_dir() -> Result<String, Error> {
+    let path = env::current_dir()?;
+    Ok(path.display().to_string())
+}
+
+fn _print_stderr(error: String) -> () {
+    io::stderr().write_all(&error.as_bytes()).ok();
+}
+
 fn main() -> io::Result<()> {
     loop {
         print!("$ ");
@@ -67,8 +76,14 @@ fn main() -> io::Result<()> {
         match command {
             "exit" => break,
             "pwd" => {
-                let pwd_env_var: String = std::env::var("PWD").unwrap();
-                println!("{pwd_env_var}");
+                let cwd: String = _get_current_working_dir().expect("");
+                println!("{cwd}");
+            },
+            "cd" => {
+                let root = Path::new(args[0]);
+                if env::set_current_dir(&root).is_err() {
+                    _print_stderr(format!("cd: {}: No such file or directory\n", args[0]));
+                }
             },
             "echo" => {
                 let display_str: String = join(&mut args, " ");
@@ -82,7 +97,7 @@ fn main() -> io::Result<()> {
                     else {
                         match _find_executable_command_in_path(arg){
                             Ok(path) => println!("{arg} is {path}"),
-                            Err(_) => println!("{arg}: not found"),
+                            Err(_) => _print_stderr(format!("{arg}: not found\n")),
                         };
                     }
                 }
@@ -91,8 +106,7 @@ fn main() -> io::Result<()> {
                 match _find_executable_command_in_path(command){
                     Ok(_) => _execute_command(&command.to_owned(), args)?,
                     Err(_) => {
-                        let error: String = String::from(command) + ": command not found\n";
-                        io::stderr().write_all(&error.as_bytes())?;
+                        _print_stderr(String::from(command) + ": command not found\n");
                     },
                 };
             }
