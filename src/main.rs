@@ -24,7 +24,11 @@ fn _find_executable_command_in_path(command: &str) -> () {
             let path = entry.unwrap().path();
             if path.is_file() && path.file_name().unwrap() == command {
                 let utf8_path = path.into_os_string().into_string().unwrap();
-                println!("{command} is {utf8_path}");
+                let md = fs::metadata(&utf8_path).unwrap();
+                let permissions = md.permissions();
+                if !permissions.readonly(){
+                    println!("{command} is {utf8_path}");
+                }
                 return;
             }
         }
