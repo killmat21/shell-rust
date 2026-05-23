@@ -1,4 +1,4 @@
-use std::{fs, io::{self, Write}};
+use std::{fs, io::{self, Write}, os::unix::fs::PermissionsExt};
 use itertools::join;
 use aho_corasick::AhoCorasick;
 
@@ -24,12 +24,15 @@ fn _find_executable_command_in_path(command: &str) -> () {
             let path = entry.unwrap().path();
             if path.is_file() && path.file_name().unwrap() == command {
                 let utf8_path = path.into_os_string().into_string().unwrap();
-                let md = fs::metadata(&utf8_path).unwrap();
-                let permissions = md.permissions();
-                if !permissions.readonly(){
+                let md = match fs::metadata(&utf8_path) {
+                    Ok(metadata) => metadata,
+                    Err(_) => continue,
+                };
+                let is_executable = md.permissions().mode() & 0o111 != 0;
+                if is_executable {
                     println!("{command} is {utf8_path}");
+                    return;
                 }
-                return;
             }
         }
     }
