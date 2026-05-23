@@ -85,7 +85,7 @@ fn main() -> io::Result<()> {
             },
             _ => {
                 match _find_executable_command_in_path(command){
-                    Ok(path) => _execute_command(&path, args),
+                    Ok(_) => _execute_command(&command.to_owned(), args)?,
                     Err(_) => {
                         let error: String = String::from(command) + ": command not found\n";
                         io::stderr().write_all(&error.as_bytes())?;
