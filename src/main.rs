@@ -1,5 +1,4 @@
-#[allow(unused_imports)]
-use std::io::{self, Write};
+use std::{fs, io::{self, Write}};
 use itertools::join;
 use aho_corasick::AhoCorasick;
 
@@ -13,6 +12,26 @@ fn _sanitize_user_input(buffer: &String) -> String {
     ac.replace_all(buffer, replace_with)
 }
 
+fn _find_executable_command_in_path(command: &str) -> () {
+    let path_env_var: String = std::env::var("PATH").unwrap();
+    let paths = path_env_var.split(":");
+    for path in paths {
+        let entries = match fs::read_dir(path) {
+            Ok(value) => value,
+            Err(_) => continue
+        };
+        for entry in entries.into_iter() {
+            let path = entry.unwrap().path();
+            if path.is_file() && path.file_name().unwrap() == command {
+                let utf8_path = path.into_os_string().into_string().unwrap();
+                println!("{command} is {utf8_path}");
+                return;
+            }
+        }
+    }
+    println!("{command}: not found");
+}
+
 fn main() -> io::Result<()> {
     loop {
         print!("$ ");
@@ -23,7 +42,10 @@ fn main() -> io::Result<()> {
         let buffer_sanitize: String = _sanitize_user_input(&buffer);
 
         let mut user_input = buffer_sanitize.split_whitespace();
-        let command: &str = &user_input.next().unwrap();
+        let command: &str = match &user_input.next() {
+            Some(val) => val,
+            None => continue
+        };
         let mut args: Vec<&str> = user_input.collect();
 
         match command {
@@ -38,7 +60,7 @@ fn main() -> io::Result<()> {
                         println!("{arg} is a shell builtin");
                     }
                     else {
-                        println!("{arg}: not found");
+                        _find_executable_command_in_path(arg);
                     }
                 }
             },
