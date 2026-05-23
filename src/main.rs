@@ -1,4 +1,5 @@
-use std::{fs, io::{self, Write}, os::unix::fs::PermissionsExt};
+use std::{fs, io::{self, ErrorKind, Write}, os::unix::fs::PermissionsExt};
+use io::Error;
 use itertools::join;
 use aho_corasick::AhoCorasick;
 
@@ -12,7 +13,7 @@ fn _sanitize_user_input(buffer: &String) -> String {
     ac.replace_all(buffer, replace_with)
 }
 
-fn _find_executable_command_in_path(command: &str) -> () {
+fn _find_executable_command_in_path(command: &str) -> Result<String, Error> {
     let path_env_var: String = std::env::var("PATH").unwrap();
     let paths = path_env_var.split(":");
     for path in paths {
@@ -30,13 +31,16 @@ fn _find_executable_command_in_path(command: &str) -> () {
                 };
                 let is_executable = md.permissions().mode() & 0o111 != 0;
                 if is_executable {
-                    println!("{command} is {utf8_path}");
-                    return;
+                    return Ok(utf8_path);
                 }
             }
         }
     }
-    println!("{command}: not found");
+    Err(Error::new(ErrorKind::NotFound, "No executable found in PATH environment variable"))
+}
+
+fn _execute_command(command: &String, args: Vec<&str>) -> () {
+    println!("{command} exists in $PATH!");
 }
 
 fn main() -> io::Result<()> {
@@ -67,13 +71,21 @@ fn main() -> io::Result<()> {
                         println!("{arg} is a shell builtin");
                     }
                     else {
-                        _find_executable_command_in_path(arg);
+                        match _find_executable_command_in_path(arg){
+                            Ok(path) => println!("{arg} is {path}"),
+                            Err(_) => println!("{arg}: not found"),
+                        };
                     }
                 }
             },
             _ => {
-                let error: String = String::from(command) + ": command not found\n";
-                io::stderr().write_all(&error.as_bytes())?;
+                match _find_executable_command_in_path(command){
+                    Ok(path) => _execute_command(&path, args),
+                    Err(_) => {
+                        let error: String = String::from(command) + ": command not found\n";
+                        io::stderr().write_all(&error.as_bytes())?;
+                    },
+                };
             }
         }
     }
