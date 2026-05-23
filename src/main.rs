@@ -1,4 +1,4 @@
-use std::{fs, io::{self, ErrorKind, Write}, os::unix::fs::PermissionsExt};
+use std::{fs, io::{self, ErrorKind, Write}, os::unix::fs::PermissionsExt, process::Command};
 use io::Error;
 use itertools::join;
 use aho_corasick::AhoCorasick;
@@ -39,8 +39,13 @@ fn _find_executable_command_in_path(command: &str) -> Result<String, Error> {
     Err(Error::new(ErrorKind::NotFound, "No executable found in PATH environment variable"))
 }
 
-fn _execute_command(command: &String, args: Vec<&str>) -> () {
-    println!("{command} exists in $PATH!");
+fn _execute_command(command: &String, args: Vec<&str>) -> Result<(), Error> {
+    let output = Command::new(command).args(args)
+        .output()
+        .expect("Failed to execute process");
+    io::stdout().write_all(&output.stdout)?;
+    io::stderr().write_all(&output.stderr)?;
+    Ok(())
 }
 
 fn main() -> io::Result<()> {
