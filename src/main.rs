@@ -6,6 +6,8 @@ use aho_corasick::AhoCorasick;
 
 const BUILTIN_COMMANDS: [&str; 5] = ["exit", "echo", "type", "pwd", "cd"];
 
+const SPECIAL_CHARACTERS: [char; 5] = ['\"', '\\', '$', '`', '\n'];
+
 fn _sanitize_buffer(buffer: &String) -> (String, Vec<String>) {
     let mut command_with_args: Vec<String> = Vec::new();
     let mut in_backslash: bool = false;
@@ -14,7 +16,7 @@ fn _sanitize_buffer(buffer: &String) -> (String, Vec<String>) {
     let mut current_quote: String = String::from("");
 
     for c in buffer.chars() {
-        if c == '\\' && !in_backslash && !in_double_quotes && !in_quotes {
+        if c == '\\' && !in_backslash && !in_quotes {
             in_backslash = true;
         }
         else if c == '\"' && !in_quotes && !in_backslash {
@@ -30,10 +32,13 @@ fn _sanitize_buffer(buffer: &String) -> (String, Vec<String>) {
             }
         }
         else {
-            current_quote.push(c);
             if in_backslash {
+                if in_double_quotes && !SPECIAL_CHARACTERS.contains(&c) {
+                    current_quote.push('\\');
+                }
                 in_backslash = false;
             }
+            current_quote.push(c);
         }
     }
 
