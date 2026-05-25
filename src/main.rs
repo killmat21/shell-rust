@@ -14,7 +14,7 @@ fn _sanitize_buffer(buffer: &String) -> (String, Vec<String>) {
     let mut current_quote: String = String::from("");
 
     for c in buffer.chars() {
-        if c == '\\' && !in_backslash {
+        if c == '\\' && !in_backslash && !in_double_quotes && !in_quotes {
             in_backslash = true;
         }
         else if c == '\"' && !in_quotes && !in_backslash {
