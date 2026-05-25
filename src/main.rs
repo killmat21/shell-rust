@@ -1,8 +1,7 @@
-use std::{env, fs, io::{self, ErrorKind, Write}, os::unix::fs::PermissionsExt, path::Path, process::Command, thread::current};
+use std::{env, fs, io::{self, ErrorKind, Write}, os::unix::fs::PermissionsExt, path::Path, process::Command};
 use io::Error;
 use itertools::join;
 use aho_corasick::AhoCorasick;
-mod utils;
 
 const BUILTIN_COMMANDS: [&str; 5] = ["exit", "echo", "type", "pwd", "cd"];
 
