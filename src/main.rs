@@ -3,21 +3,27 @@ use io::Error;
 use itertools::join;
 use aho_corasick::AhoCorasick;
 
+
 const BUILTIN_COMMANDS: [&str; 5] = ["exit", "echo", "type", "pwd", "cd"];
 
 fn _sanitize_buffer(buffer: &String) -> (String, Vec<String>) {
     let mut command_with_args: Vec<String> = Vec::new();
+    let mut in_backslash: bool = false;
     let mut in_quotes: bool = false;
     let mut in_double_quotes: bool = false;
     let mut current_quote: String = String::from("");
+
     for c in buffer.chars() {
-        if c == '\"' && !in_quotes {
+        if c == '\\' && !in_backslash {
+            in_backslash = true;
+        }
+        else if c == '\"' && !in_quotes && !in_backslash {
             in_double_quotes = !in_double_quotes;
         }
-        else if c == '\'' && !in_double_quotes {
+        else if c == '\'' && !in_double_quotes && !in_backslash {
             in_quotes = !in_quotes;
         }
-        else if in_double_quotes == false && in_quotes == false && c.is_whitespace() {
+        else if in_double_quotes == false && in_quotes == false && c.is_whitespace() && !in_backslash {
             if !current_quote.is_empty() {
                 command_with_args.push(current_quote);
                 current_quote = String::from("");
@@ -25,6 +31,9 @@ fn _sanitize_buffer(buffer: &String) -> (String, Vec<String>) {
         }
         else {
             current_quote.push(c);
+            if in_backslash {
+                in_backslash = false;
+            }
         }
     }
 
